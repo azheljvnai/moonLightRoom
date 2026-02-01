@@ -136,11 +136,7 @@ function App() {
       )}
 
       {flow === FLOW_FRAME && photos.length > 0 && (
-        <FrameSelectScreen
-          photos={photos}
-          overlayImage={overlayImage}
-          onNext={handleFrameNext}
-        />
+        <FrameSelectScreen photos={photos} onNext={handleFrameNext} />
       )}
 
       {flow === FLOW_VALENTINE && (

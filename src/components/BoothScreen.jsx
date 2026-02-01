@@ -19,6 +19,7 @@ export default function BoothScreen({
   const [selectedForRetake, setSelectedForRetake] = useState(null) // which slot (0–3) to retake when full
   const timerIntervalRef = useRef(null)
   const timerPhotosAddedRef = useRef(0)
+  const pendingTimerUrlRef = useRef(null)
 
   function doCapture() {
     const video = videoRef?.current
@@ -99,10 +100,13 @@ export default function BoothScreen({
           const url = doCapture()
           if (url) {
             timerPhotosAddedRef.current += 1
-            setPhotos((prev) => {
-              if (prev.length >= PHOTO_COUNT) return prev
-              return [...prev, url]
-            })
+            pendingTimerUrlRef.current = url
+            setTimeout(() => {
+              if (pendingTimerUrlRef.current) {
+                setPhotos((prev) => (prev.length >= PHOTO_COUNT ? prev : [...prev, pendingTimerUrlRef.current]))
+                pendingTimerUrlRef.current = null
+              }
+            }, 0)
           }
           return TIMER_INTERVAL_SEC
         }

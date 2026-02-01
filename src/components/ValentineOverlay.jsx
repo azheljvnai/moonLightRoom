@@ -4,7 +4,7 @@ import confetti from 'canvas-confetti'
 
 const PROMPTS = [
   'Will you be my Valentine?',
-  'Are you sure?',
+  'Bakit hindi? Pleaseeee!!',
   'Please go out with me?',
   'Pretty please?',
   "I'll make you the happiest! Say yes?",
@@ -137,13 +137,6 @@ function ValentineOverlay({ visible, onDismiss }) {
           </button>
         )}
       </div>
-
-      <p
-        className="relative mt-6 text-sm text-white/50"
-        style={{ fontFamily: 'var(--font-serif)' }}
-      >
-        Or tap anywhere to continue
-      </p>
     </div>
   )
 }
