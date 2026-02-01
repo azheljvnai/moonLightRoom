@@ -84,17 +84,17 @@ function App() {
 
   function handleBoothNext(photoList) {
     setPhotos(photoList)
+    setFlow(FLOW_VALENTINE)
+  }
+
+  function handleValentineDismiss() {
+    stopRecording()
     setFlow(FLOW_FRAME)
   }
 
   function handleFrameNext(url) {
     setFinalPhotoUrl(url)
-    setFlow(FLOW_VALENTINE)
-  }
-
-  function handleValentineDismiss() {
     setFlow(FLOW_END)
-    stopRecording()
   }
 
   const showHeader = flow !== FLOW_START
