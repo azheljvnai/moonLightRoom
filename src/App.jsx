@@ -97,16 +97,33 @@ function App() {
     setFlow(FLOW_END)
   }
 
-  const showHeader = flow !== FLOW_START
+  function handleBoothBack() {
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop())
+      setStream(null)
+    }
+    stopRecording()
+    setFlow(FLOW_START)
+  }
+
+  function handleFrameBack() {
+    setFlow(FLOW_BOOTH)
+  }
+
+  function handleEndBack() {
+    setFlow(FLOW_FRAME)
+  }
+
+  const showHeader = flow !== FLOW_START && flow !== FLOW_VALENTINE && flow !== FLOW_END
 
   return (
-    <div className="app-bg min-h-screen text-white p-6 pb-24">
+    <div className="app-bg min-h-screen text-slate-900 p-6 pb-24">
       {showHeader && (
-        <header className="max-w-2xl mx-auto mb-6 text-center">
-          <h1 className="text-xl sm:text-2xl font-bold tracking-wide text-white/95">
+        <header className="max-w-2xl mx-auto mb-8 text-center">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-wide text-slate-900">
             Moon Light Room
           </h1>
-          <p className="text-white/50 text-sm mt-1">ENHYPEN-inspired photo booth</p>
+          <p className="text-slate-700 text-base sm:text-lg mt-2 max-w-md mx-auto">Photo booth. Take four photos, pick your frame, then get your keepsake.</p>
         </header>
       )}
 
@@ -131,12 +148,13 @@ function App() {
             stream={stream}
             overlayImage={overlayImage}
             onNext={handleBoothNext}
+            onBack={handleBoothBack}
           />
         </>
       )}
 
       {flow === FLOW_FRAME && photos.length > 0 && (
-        <FrameSelectScreen photos={photos} onNext={handleFrameNext} />
+        <FrameSelectScreen photos={photos} onNext={handleFrameNext} onBack={handleFrameBack} />
       )}
 
       {flow === FLOW_VALENTINE && (
@@ -148,6 +166,7 @@ function App() {
           finalPhotoUrl={finalPhotoUrl}
           recordedUrl={recordedUrl}
           recordedFilename={recordedFilename}
+          onBack={handleEndBack}
         />
       )}
 

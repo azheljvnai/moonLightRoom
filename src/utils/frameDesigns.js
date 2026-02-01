@@ -1,14 +1,18 @@
 // Frame designs: first 4 = 2x2 grid, last 4 = vertical strip (4 stacked).
+// Main title on all frames: "I'm AJ's Valentine!"; footer = date mm-dd-yyyy.
+// tagline = short design-specific line under the title for variety.
+
+const MAIN_TITLE = "I'm AJ's Valentine!"
 
 export const FRAME_DESIGNS = [
-  { id: 'black', name: 'Black', layout: '2x2', bg: '#1a1a1a', border: '#ffffff', accent: '#f472b6', text: 'HAPPY HAPPY HAPPY' },
-  { id: 'pink', name: 'Pink', layout: '2x2', bg: '#fce7f3', border: '#ffffff', accent: '#be185d', text: 'HAPPY HAPPY HAPPY' },
-  { id: 'teal', name: 'Teal', layout: '2x2', bg: '#ccfbf1', border: '#ffffff', accent: '#0d9488', text: 'HAPPY HAPPY HAPPY' },
-  { id: 'orange', name: 'Orange', layout: '2x2', bg: '#ffedd5', border: '#ffffff', accent: '#ea580c', text: 'HAPPY HAPPY HAPPY' },
-  { id: 'yellow', name: 'Yellow', layout: 'vertical', bg: '#fef9c3', border: '#ffffff', accent: '#ca8a04', text: 'HAPPY HAPPY HAPPY' },
-  { id: 'purple', name: 'Purple', layout: 'vertical', bg: '#f3e8ff', border: '#ffffff', accent: '#7c3aed', text: 'HAPPY HAPPY HAPPY' },
-  { id: 'blue', name: 'Light Blue', layout: 'vertical', bg: '#e0f2fe', border: '#ffffff', accent: '#0284c7', text: 'HAPPY HAPPY HAPPY' },
-  { id: 'red', name: 'Red', layout: 'vertical', bg: '#fee2e2', border: '#ffffff', accent: '#dc2626', text: 'HAPPY HAPPY HAPPY' },
+  { id: 'black', name: 'Classic', layout: '2x2', bg: '#1a1a1a', border: '#ffffff', accent: '#f472b6', tagline: 'Forever Yours' },
+  { id: 'pink', name: 'Blush', layout: '2x2', bg: '#fce7f3', border: '#f9a8d4', accent: '#be185d', tagline: 'Be Mine' },
+  { id: 'teal', name: 'Mint', layout: '2x2', bg: '#ccfbf1', border: '#5eead4', accent: '#0d9488', tagline: 'With Love' },
+  { id: 'orange', name: 'Sunset', layout: '2x2', bg: '#ffedd5', border: '#fdba74', accent: '#ea580c', tagline: 'Yours Always' },
+  { id: 'yellow', name: 'Honey', layout: 'vertical', bg: '#fef9c3', border: '#fde047', accent: '#ca8a04', tagline: 'Sweetest Day' },
+  { id: 'purple', name: 'Lavender', layout: 'vertical', bg: '#f3e8ff', border: '#c4b5fd', accent: '#7c3aed', tagline: 'XOXO' },
+  { id: 'blue', name: 'Sky', layout: 'vertical', bg: '#e0f2fe', border: '#7dd3fc', accent: '#0284c7', tagline: 'Happy Valentine\'s' },
+  { id: 'red', name: 'Rose', layout: 'vertical', bg: '#fee2e2', border: '#fca5a5', accent: '#dc2626', tagline: 'Love Always' },
 ]
 
 export const STRIP_WIDTH = 400
@@ -36,8 +40,18 @@ function drawSlot(ctx, design, x, y, slotW, slotH, img, border) {
   ctx.fillText('♥', bx + slotW - 14, by + slotH - 4)
 }
 
-export function renderFrameStrip(photos, design, outputWidth = STRIP_WIDTH) {
+function formatDateMMDDYYYY(d) {
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const year = d.getFullYear()
+  return `${month}-${day}-${year}`
+}
+
+export function renderFrameStrip(photos, design, outputWidth = STRIP_WIDTH, options = {}) {
   if (!photos || photos.length !== 4) return Promise.resolve(null)
+  const dateTaken = options.date instanceof Date ? options.date : new Date()
+  const dateStr = formatDateMMDDYYYY(dateTaken)
+
   const scale = outputWidth / STRIP_WIDTH
   const w = STRIP_WIDTH * scale
   const padding = PADDING * scale
@@ -81,10 +95,18 @@ export function renderFrameStrip(photos, design, outputWidth = STRIP_WIDTH) {
 
   ctx.fillStyle = design.bg
   ctx.fillRect(0, 0, w, totalH)
+  ctx.textAlign = 'center'
+  // Header: main title + optional tagline
   ctx.fillStyle = design.accent
   ctx.font = `bold ${Math.round(14 * scale)}px sans-serif`
-  ctx.textAlign = 'center'
-  ctx.fillText(design.text, w / 2, padding + headerH / 2 + 4)
+  ctx.fillText(MAIN_TITLE, w / 2, padding + Math.round(headerH * 0.45) + 4)
+  if (design.tagline) {
+    ctx.font = `${Math.round(10 * scale)}px sans-serif`
+    ctx.fillStyle = design.accent
+    ctx.globalAlpha = 0.9
+    ctx.fillText(design.tagline, w / 2, padding + Math.round(headerH * 0.82) + 2)
+    ctx.globalAlpha = 1
+  }
 
   return Promise.all(photos.map((src) => {
     return new Promise((resolve, reject) => {
@@ -99,9 +121,12 @@ export function renderFrameStrip(photos, design, outputWidth = STRIP_WIDTH) {
       const { x, y } = positions[i]
       drawSlot(ctx, design, x, y, slotW, slotH, images[i], border)
     }
+    // Footer: date taken (small text)
     ctx.fillStyle = design.accent
-    ctx.font = `bold ${Math.round(11 * scale)}px sans-serif`
-    ctx.fillText('CUTE DAY', w / 2, totalH - padding - footerH / 2 + 4)
+    ctx.globalAlpha = 0.85
+    ctx.font = `${Math.round(10 * scale)}px sans-serif`
+    ctx.fillText(dateStr, w / 2, totalH - padding - footerH / 2 + 4)
+    ctx.globalAlpha = 1
     return canvas.toDataURL('image/png')
   })
 }

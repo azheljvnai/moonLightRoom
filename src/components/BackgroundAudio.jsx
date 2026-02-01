@@ -45,7 +45,7 @@ function BackgroundAudio() {
         <button
           type="button"
           onClick={toggleMusic}
-          className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-full bg-black/60 backdrop-blur-sm px-4 py-2.5 text-sm text-white/90 ring-1 ring-white/20 hover:bg-black/80 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+          className="card-fun fixed bottom-6 right-6 z-40 flex items-center gap-3 rounded-2xl bg-slate-800/95 backdrop-blur-sm px-5 py-3 text-base font-medium text-white ring-2 ring-violet-300/50 hover:bg-slate-700/95 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
           aria-label={isPlaying ? 'Pause background music' : 'Play background music'}
         >
           {isPlaying ? (

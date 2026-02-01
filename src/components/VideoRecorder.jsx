@@ -173,7 +173,7 @@ function VideoRecorder({ stream, autoDownload = true }) {
           <button
             type="button"
             onClick={stopRecording}
-            className="px-5 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 font-medium text-sm sm:text-base transition-colors"
+            className="px-5 py-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 font-medium text-sm sm:text-base transition-colors"
             aria-label="Finish recording"
           >
             Finish
@@ -191,7 +191,7 @@ function VideoRecorder({ stream, autoDownload = true }) {
             <a
               href={recordedUrl}
               download={recordedFilename || 'moon-light-room.webm'}
-              className="inline-flex items-center px-5 py-2.5 rounded-lg bg-rose-600/90 hover:bg-rose-500 font-medium text-sm sm:text-base transition-colors"
+              className="inline-flex items-center px-5 py-2.5 rounded-lg bg-violet-600/90 hover:bg-violet-500 font-medium text-sm sm:text-base transition-colors"
             >
               Save reaction video (WebM)
             </a>
@@ -216,7 +216,7 @@ function VideoRecorder({ stream, autoDownload = true }) {
           <button
             type="button"
             onClick={downloadCachedVideo}
-            className="px-4 py-2 rounded-lg bg-rose-600/80 hover:bg-rose-500 text-sm font-medium"
+            className="px-4 py-2 rounded-lg bg-violet-600/80 hover:bg-violet-500 text-sm font-medium"
           >
             Download last video
           </button>

@@ -95,7 +95,7 @@ function PhotoCapture({ videoRef, onPhotoCaptured, autoDownload = true }) {
           type="button"
           onClick={takePhoto}
           disabled={!videoReady || capturing}
-          className="px-5 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:opacity-50 disabled:pointer-events-none font-medium text-sm sm:text-base transition-colors"
+          className="px-5 py-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:pointer-events-none font-medium text-sm sm:text-base transition-colors"
         >
           {capturing ? 'Capturing…' : 'Take Photo'}
         </button>
@@ -147,7 +147,7 @@ function PhotoCapture({ videoRef, onPhotoCaptured, autoDownload = true }) {
           <button
             type="button"
             onClick={downloadCachedPhoto}
-            className="px-4 py-2 rounded-lg bg-rose-600/80 hover:bg-rose-500 text-sm font-medium"
+            className="px-4 py-2 rounded-lg bg-violet-600/80 hover:bg-violet-500 text-sm font-medium"
           >
             Download last photo
           </button>

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Camera, ChevronRight, Timer, RotateCcw } from 'lucide-react'
+import { Camera, ChevronLeft, ChevronRight, Timer, RotateCcw } from 'lucide-react'
 
 const PHOTO_COUNT = 4
 const TIMER_INTERVAL_SEC = 10
@@ -10,6 +10,7 @@ export default function BoothScreen({
   stream,
   overlayImage,
   onNext,
+  onBack,
 }) {
   const [photos, setPhotos] = useState([])
   const [capturing, setCapturing] = useState(false)
@@ -150,12 +151,25 @@ export default function BoothScreen({
   const full = photos.length >= PHOTO_COUNT
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-6">
-      <p className="text-center text-white/70 text-sm">
+    <div className="w-full max-w-2xl mx-auto space-y-8">
+      {onBack && (
+        <div className="flex justify-start mb-2">
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/80 hover:bg-white text-slate-700 font-medium text-base ring-1 ring-slate-300/80 shadow-sm transition-all"
+            aria-label="Back"
+          >
+            <ChevronLeft className="w-5 h-5" />
+            Back
+          </button>
+        </div>
+      )}
+      <p className="text-center text-slate-800 text-lg sm:text-xl font-medium">
         Take {PHOTO_COUNT} photos ({photos.length}/{PHOTO_COUNT})
       </p>
 
-      <div className="flex justify-center gap-2">
+      <div className="flex justify-center gap-3">
         <button
           type="button"
           onClick={() => {
@@ -167,62 +181,64 @@ export default function BoothScreen({
               timerIntervalRef.current = null
             }
           }}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`inline-flex items-center gap-2.5 px-5 py-3 rounded-xl text-base font-semibold transition-all ${
             captureMode === 'manual'
-              ? 'bg-rose-600 text-white'
-              : 'bg-white/10 text-white/80 hover:bg-white/20'
+              ? 'btn-primary text-white shadow-lg'
+              : 'bg-violet-200/80 text-slate-800 hover:bg-violet-200 ring-2 ring-violet-200'
           }`}
         >
-          <Camera className="w-4 h-4" />
+          <Camera className="w-5 h-5" />
           Manual
         </button>
         <button
           type="button"
           onClick={() => setCaptureMode('timed')}
           disabled={full || timerStarted}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`inline-flex items-center gap-2.5 px-5 py-3 rounded-xl text-base font-semibold transition-all ${
             captureMode === 'timed'
-              ? 'bg-rose-600 text-white'
-              : 'bg-white/10 text-white/80 hover:bg-white/20'
+              ? 'btn-primary text-white shadow-lg'
+              : 'bg-violet-200/80 text-slate-800 hover:bg-violet-200 ring-2 ring-violet-200'
           } disabled:opacity-50 disabled:pointer-events-none`}
         >
-          <Timer className="w-4 h-4" />
+          <Timer className="w-5 h-5" />
           {TIMER_INTERVAL_SEC}s auto
         </button>
       </div>
 
-      <div className="grid grid-cols-4 gap-2 sm:gap-3 mb-4">
-        {Array.from({ length: PHOTO_COUNT }).map((_, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => full && setSelectedForRetake(i)}
-            disabled={!full}
-            className={`aspect-square rounded-xl overflow-hidden flex items-center justify-center transition-all ${
-              full
-                ? selectedForRetake === i
-                  ? 'ring-2 ring-rose-500 ring-offset-2 ring-offset-[#0a0508]'
-                  : 'ring-2 ring-white/20 hover:ring-white/40'
-                : 'ring-1 ring-white/10 bg-black/50'
-            } disabled:pointer-events-none`}
-          >
-            {photos[i] ? (
-              <img
-                src={photos[i]}
-                alt={`Photo ${i + 1}`}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span className="text-white/30 text-xs">{i + 1}</span>
-            )}
-          </button>
-        ))}
+      <div className="card-fun p-4 sm:p-5">
+        <div className="grid grid-cols-4 gap-3 sm:gap-4">
+          {Array.from({ length: PHOTO_COUNT }).map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => full && setSelectedForRetake(i)}
+              disabled={!full}
+              className={`aspect-square rounded-2xl overflow-hidden flex items-center justify-center transition-all ${
+                full
+                  ? selectedForRetake === i
+                    ? 'ring-2 ring-violet-600 ring-offset-2 ring-offset-[#e8e4ef] shadow-lg shadow-violet-500/30'
+                    : 'ring-2 ring-slate-500 hover:ring-violet-500'
+                  : 'ring-2 ring-slate-400 bg-slate-300/90'
+              } disabled:pointer-events-none`}
+            >
+              {photos[i] ? (
+                <img
+                  src={photos[i]}
+                  alt={`Photo ${i + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-slate-700 text-xl font-bold">{i + 1}</span>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
       {captureMode === 'timed' && timerStarted && countdown !== null && photos.length < PHOTO_COUNT && (
-        <div className="text-center">
-          <p className="text-white/60 text-sm mb-1">Next photo in</p>
-          <p className="text-4xl font-bold text-white/90 tabular-nums">{countdown}s</p>
+        <div className="card-fun text-center py-6 px-6">
+          <p className="text-slate-700 text-lg mb-2">Next photo in</p>
+          <p className="text-5xl sm:text-6xl font-bold text-slate-900 tabular-nums">{countdown}s</p>
         </div>
       )}
 
@@ -232,9 +248,9 @@ export default function BoothScreen({
             type="button"
             onClick={startTimerCapture}
             disabled={!videoReady}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 disabled:opacity-50 font-medium transition-colors"
+            className="btn-primary inline-flex items-center gap-3 px-8 py-4 rounded-2xl disabled:opacity-50 text-white text-lg font-bold"
           >
-            <Timer className="w-5 h-5" />
+            <Timer className="w-6 h-6" />
             Start {TIMER_INTERVAL_SEC}s auto capture
           </button>
         </div>
@@ -246,40 +262,40 @@ export default function BoothScreen({
             type="button"
             onClick={takePhotoManual}
             disabled={!videoReady || capturing}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 disabled:opacity-50 font-medium transition-colors"
+            className="btn-primary inline-flex items-center gap-3 px-8 py-4 rounded-2xl disabled:opacity-50 text-white text-lg font-bold"
           >
-            <Camera className="w-5 h-5" />
+            <Camera className="w-6 h-6" />
             {capturing ? 'Capturing…' : 'Take Photo'}
           </button>
         </div>
       )}
 
       {full && (
-        <div className="flex flex-wrap gap-3 justify-center items-center">
+        <div className="flex flex-wrap gap-4 justify-center items-center">
           {selectedForRetake !== null && (
             <button
               type="button"
               onClick={handleRetakeCapture}
               disabled={!videoReady || capturing}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 disabled:opacity-50 font-medium transition-colors"
+              className="btn-primary inline-flex items-center gap-3 px-8 py-4 rounded-2xl disabled:opacity-50 text-white text-lg font-bold"
             >
-              <RotateCcw className="w-5 h-5" />
+              <RotateCcw className="w-6 h-6" />
               {capturing ? 'Capturing…' : `Retry photo ${selectedForRetake + 1}`}
             </button>
           )}
           <button
             type="button"
             onClick={() => onNext(photos)}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/15 hover:bg-white/25 font-medium transition-colors"
+            className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-violet-300/90 hover:bg-violet-300 text-slate-900 text-lg font-bold ring-2 ring-violet-200 shadow-md hover:shadow-lg transition-all"
           >
             Next
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-6 h-6" />
           </button>
         </div>
       )}
 
       {full && selectedForRetake === null && (
-        <p className="text-center text-white/50 text-sm">
+        <p className="text-center text-slate-600 text-base sm:text-lg">
           Click a photo to select it, then Retry to retake that one.
         </p>
       )}

@@ -7,24 +7,64 @@
 
 body {
   font-family: var(--font-serif);
+  font-size: 18px;
 }
 
-/* Red moon / dark gradient background (optional bg image via .app-bg) */
+/* Muted purple background + subtle dot pattern for a fun, creative look */
 .app-bg {
-  background-color: #0a0508;
+  background-color: #e2dfe8;
   background-image:
-    radial-gradient(ellipse 100% 80% at 50% 0%, rgba(120, 20, 40, 0.35) 0%, transparent 50%),
-    radial-gradient(ellipse 80% 60% at 70% 30%, rgba(80, 15, 35, 0.2) 0%, transparent 45%),
-    radial-gradient(ellipse 60% 100% at 20% 80%, rgba(60, 10, 25, 0.15) 0%, transparent 40%),
-    linear-gradient(180deg, #0f080c 0%, #0a0508 40%, #050304 100%);
+    radial-gradient(circle at 25% 25%, rgba(196, 181, 253, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse 120% 80% at 50% 0%, rgba(167, 139, 250, 0.35) 0%, transparent 55%),
+    radial-gradient(ellipse 80% 60% at 80% 20%, rgba(196, 181, 253, 0.25) 0%, transparent 50%),
+    radial-gradient(ellipse 70% 100% at 20% 90%, rgba(196, 181, 253, 0.2) 0%, transparent 45%),
+    linear-gradient(180deg, #e8e4ef 0%, #e2dfe8 40%, #d4cee0 100%);
   min-height: 100vh;
+  position: relative;
 }
 
-/* Optional: use image from public/bg/dark-gradient.jpg when present */
+.app-bg::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(rgba(139, 92, 246, 0.08) 1.5px, transparent 1.5px);
+  background-size: 28px 28px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app-bg > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Fun card style: soft shadow, rounded, slight lift */
+.card-fun {
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 24px rgba(139, 92, 246, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+}
+
+/* Primary button: gradient + shadow + hover pop */
+.btn-primary {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45);
+}
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Optional: use image from public/bg when present */
 .app-bg.has-bg-image {
   background-image:
-    linear-gradient(180deg, rgba(10, 5, 8, 0.85) 0%, rgba(10, 5, 8, 0.92) 100%),
-    radial-gradient(ellipse 100% 80% at 50% 0%, rgba(120, 20, 40, 0.25) 0%, transparent 50%),
+    linear-gradient(180deg, rgba(226, 223, 232, 0.92) 0%, rgba(212, 206, 224, 0.96) 100%),
+    radial-gradient(ellipse 120% 80% at 50% 0%, rgba(167, 139, 250, 0.25) 0%, transparent 55%),
     url("/bg/dark-gradient.jpg");
   background-size: auto, auto, cover;
   background-position: 0 0, 0 0, center;
@@ -51,11 +91,65 @@ body {
 }
 
 @keyframes soft-glow {
-  0%, 100% { filter: drop-shadow(0 0 20px rgba(244, 63, 94, 0.4)); }
-  50% { filter: drop-shadow(0 0 40px rgba(244, 63, 94, 0.7)); }
+  0%, 100% { filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.4)); }
+  50% { filter: drop-shadow(0 0 40px rgba(139, 92, 246, 0.6)); }
 }
 
 @keyframes float-heart {
   0%, 100% { transform: translateY(0) scale(1); opacity: 0.6; }
   50% { transform: translateY(-8px) scale(1.1); opacity: 1; }
+}
+
+@keyframes gentle-bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+/* Neon lotus field – glow and interactive hover */
+.neon-lotus {
+  filter: drop-shadow(0 0 6px currentColor) drop-shadow(0 0 12px currentColor);
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+.neon-lotus:hover,
+.lotus-wrap:hover .neon-lotus {
+  filter: drop-shadow(0 0 12px currentColor) drop-shadow(0 0 24px currentColor) drop-shadow(0 0 36px currentColor);
+  transform: scale(1.15);
+}
+@keyframes lotus-glow {
+  0%, 100% { opacity: 0.85; filter: drop-shadow(0 0 6px currentColor) drop-shadow(0 0 12px currentColor); }
+  50% { opacity: 1; filter: drop-shadow(0 0 10px currentColor) drop-shadow(0 0 20px currentColor); }
+}
+.neon-lotus-sway {
+  animation: lotus-sway 4s ease-in-out infinite;
+}
+@keyframes lotus-sway {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+
+/* Thank-you card – Valentine style, lace-like glow */
+.thank-you-card {
+  box-shadow:
+    0 0 0 1px rgba(251, 207, 232, 0.4),
+    0 0 24px rgba(244, 114, 182, 0.25),
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+.thank-you-card-inner {
+  font-family: var(--font-serif);
+}
+
+/* Frame template selector – clear “selected” state */
+.frame-option-selected {
+  box-shadow:
+    0 0 0 3px rgba(139, 92, 246, 0.6),
+    0 0 0 6px rgba(196, 181, 253, 0.25),
+    0 12px 28px rgba(139, 92, 246, 0.35),
+    0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.frame-option-unselected {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.frame-option-unselected:hover {
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.2);
 }

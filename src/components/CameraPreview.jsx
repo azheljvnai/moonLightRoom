@@ -31,10 +31,10 @@ const CameraPreview = forwardRef(function CameraPreview(
 
   if (error) {
     return (
-      <div className="w-full max-w-2xl mx-auto rounded-xl overflow-hidden bg-black/60 border border-rose-500/40 p-6 sm:p-8 text-center">
-        <div className="text-rose-300 text-lg sm:text-xl font-semibold mb-2">Camera access required</div>
-        <p className="text-white/70 text-sm sm:text-base">{error}</p>
-        <p className="text-white/50 text-xs sm:text-sm mt-4">
+      <div className="card-fun w-full max-w-2xl mx-auto rounded-2xl overflow-hidden bg-white/90 border-2 border-violet-200 p-8 sm:p-10 text-center">
+        <div className="text-slate-800 text-xl sm:text-2xl font-bold mb-3">Camera access required</div>
+        <p className="text-slate-800 text-base sm:text-lg">{error}</p>
+        <p className="text-slate-600 text-base sm:text-lg mt-5">
           Check your browser permissions and try again.
         </p>
       </div>
@@ -42,10 +42,10 @@ const CameraPreview = forwardRef(function CameraPreview(
   }
 
   return (
-    <div className="relative w-full max-w-2xl mx-auto rounded-xl overflow-hidden bg-black shadow-lg ring-1 ring-white/10 aspect-video min-h-[200px] sm:min-h-[280px] flex items-center justify-center vignette">
+    <div className="card-fun relative w-full max-w-2xl mx-auto rounded-2xl overflow-hidden bg-black shadow-xl ring-2 ring-violet-200/80 aspect-video min-h-[200px] sm:min-h-[280px] flex items-center justify-center vignette">
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-900/90 z-10">
-          <span className="text-white/70 text-sm sm:text-base">Starting camera…</span>
+        <div className="absolute inset-0 flex items-center justify-center bg-violet-950/90 z-10 rounded-2xl">
+          <span className="text-violet-200 text-lg sm:text-xl font-medium">Starting camera…</span>
         </div>
       )}
       <video
