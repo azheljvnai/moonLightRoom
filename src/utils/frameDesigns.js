@@ -17,25 +17,27 @@ const BORDER = 4
 const SLOT_GAP = 8
 const HEADER_H = 44
 const FOOTER_H = 36
-const SLOT_HEIGHT_VERTICAL = 300
+const VERTICAL_SLOT_HEIGHT = 300
 
-function drawSlot(ctx, design, x, y, slotW, slotH, img, scale, border) {
+function drawSlot(ctx, design, x, y, slotW, slotH, img, border) {
   ctx.fillStyle = design.border
   ctx.fillRect(x, y, slotW + border * 2, slotH + border * 2)
   ctx.fillStyle = '#111'
   ctx.fillRect(x + border, y + border, slotW, slotH)
   if (img) ctx.drawImage(img, x + border, y + border, slotW, slotH)
   ctx.fillStyle = design.accent
+  const scale = border / BORDER
   ctx.font = `${12 * scale}px sans-serif`
-  ctx.fillText('♥', x + border + 6, y + border + 14)
-  ctx.fillText('♥', x + border + slotW - 14, y + border + 14)
-  ctx.fillText('♥', x + border + 6, y + border + slotH - 4)
-  ctx.fillText('♥', x + border + slotW - 14, y + border + slotH - 4)
+  const bx = x + border
+  const by = y + border
+  ctx.fillText('♥', bx + 6, by + 14)
+  ctx.fillText('♥', bx + slotW - 14, by + 14)
+  ctx.fillText('♥', bx + 6, by + slotH - 4)
+  ctx.fillText('♥', bx + slotW - 14, by + slotH - 4)
 }
 
 export function renderFrameStrip(photos, design, outputWidth = STRIP_WIDTH) {
   if (!photos || photos.length !== 4) return Promise.resolve(null)
-  const layout = design.layout === '2x2' ? '2x2' : 'vertical'
   const scale = outputWidth / STRIP_WIDTH
   const w = STRIP_WIDTH * scale
   const padding = PADDING * scale
@@ -44,35 +46,31 @@ export function renderFrameStrip(photos, design, outputWidth = STRIP_WIDTH) {
   const headerH = HEADER_H * scale
   const footerH = FOOTER_H * scale
 
-  let totalH
-  let drawSlots
+  const is2x2 = design.layout === '2x2'
 
-  if (layout === '2x2') {
-    const slotW = (w - padding * 2 - border * 4 - slotGap) / 2
-    const slotH = slotW
+  let totalH
+  let positions
+  let slotW, slotH
+
+  if (is2x2) {
+    slotW = (w - padding * 2 - border * 4 - slotGap) / 2
+    slotH = slotW
     totalH = headerH + slotH * 2 + slotGap + border * 4 + footerH + padding * 2
-    const positions = [
+    positions = [
       { x: padding, y: padding + headerH },
       { x: padding + slotW + border * 2 + slotGap, y: padding + headerH },
       { x: padding, y: padding + headerH + slotH + border * 2 + slotGap },
       { x: padding + slotW + border * 2 + slotGap, y: padding + headerH + slotH + border * 2 + slotGap },
     ]
-    drawSlots = (ctx, images) => {
-      for (let i = 0; i < 4; i++) {
-        const { x, y } = positions[i]
-        drawSlot(ctx, design, x, y, slotW, slotH, images[i], scale, border)
-      }
-    }
   } else {
-    const slotH = SLOT_HEIGHT_VERTICAL * scale
-    const slotW = w - padding * 2 - border * 2
-    totalH = headerH + slotH * 4 + slotGap * 3 + border * 4 + footerH + padding * 2
-    drawSlots = (ctx, images) => {
-      let y = padding + headerH
-      for (let i = 0; i < 4; i++) {
-        drawSlot(ctx, design, padding, y, slotW, slotH, images[i], scale, border)
-        y += slotH + border * 2 + slotGap
-      }
+    slotH = VERTICAL_SLOT_HEIGHT * scale
+    slotW = w - padding * 2 - border * 2
+    totalH = headerH + slotH * 4 + border * 8 + slotGap * 3 + footerH + padding * 2
+    let y = padding + headerH
+    positions = []
+    for (let i = 0; i < 4; i++) {
+      positions.push({ x: padding, y })
+      y += slotH + border * 2 + slotGap
     }
   }
 
@@ -97,7 +95,10 @@ export function renderFrameStrip(photos, design, outputWidth = STRIP_WIDTH) {
       img.src = src
     })
   })).then((images) => {
-    drawSlots(ctx, images)
+    for (let i = 0; i < 4; i++) {
+      const { x, y } = positions[i]
+      drawSlot(ctx, design, x, y, slotW, slotH, images[i], border)
+    }
     ctx.fillStyle = design.accent
     ctx.font = `bold ${Math.round(11 * scale)}px sans-serif`
     ctx.fillText('CUTE DAY', w / 2, totalH - padding - footerH / 2 + 4)
