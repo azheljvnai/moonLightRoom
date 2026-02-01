@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import CameraPreview from './components/CameraPreview'
 import StartScreen from './components/StartScreen'
 import BoothScreen from './components/BoothScreen'
@@ -6,6 +6,7 @@ import FrameSelectScreen from './components/FrameSelectScreen'
 import EndScreen from './components/EndScreen'
 import ValentineOverlay from './components/ValentineOverlay'
 import BackgroundAudio from './components/BackgroundAudio'
+import ErrorModal from './components/ErrorModal'
 import { useRecording } from './hooks/useRecording'
 
 const OVERLAY_SRC = '/frames/red-moon-frame.png'
@@ -19,6 +20,7 @@ function App() {
   const videoRef = useRef(null)
   const [flow, setFlow] = useState(FLOW_START)
   const [stream, setStream] = useState(null)
+  const [videoReady, setVideoReady] = useState(false)
   const [cameraError, setCameraError] = useState(null)
   const [cameraLoading, setCameraLoading] = useState(false)
   const [photos, setPhotos] = useState([])
@@ -51,6 +53,7 @@ function App() {
         video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: true,
       })
+      setVideoReady(false)
       setStream(mediaStream)
       setFlow(FLOW_BOOTH)
       startRecording(mediaStream)
@@ -76,6 +79,8 @@ function App() {
       }
     }
   }, [stream])
+
+  const onVideoReady = useCallback(() => setVideoReady(true), [])
 
   function handleBoothNext(photoList) {
     setPhotos(photoList)
@@ -106,36 +111,23 @@ function App() {
       )}
 
       {flow === FLOW_START && (
-        <StartScreen
-          onStart={handleStart}
-          loading={cameraLoading}
-          error={cameraError}
-        />
+        <StartScreen onStart={handleStart} loading={cameraLoading} />
       )}
 
       {flow === FLOW_BOOTH && stream && (
         <>
-          {isRecording && (
-            <div className="flex justify-center mb-2">
-              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/20 text-rose-300 text-xs font-medium ring-1 ring-rose-500/30">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-rose-500" />
-                </span>
-                Recording reaction
-              </span>
-            </div>
-          )}
           <div className="w-full max-w-2xl mx-auto mb-6">
             <CameraPreview
               ref={videoRef}
               stream={stream}
               error={cameraError}
               loading={false}
+              onVideoReady={onVideoReady}
             />
           </div>
           <BoothScreen
             videoRef={videoRef}
+            videoReady={videoReady}
             stream={stream}
             overlayImage={overlayImage}
             onNext={handleBoothNext}
@@ -164,6 +156,14 @@ function App() {
       )}
 
       <BackgroundAudio />
+
+      {cameraError && (
+        <ErrorModal
+          title="Camera access required"
+          message={cameraError}
+          onClose={() => setCameraError(null)}
+        />
+      )}
     </div>
   )
 }

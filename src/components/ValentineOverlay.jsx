@@ -1,5 +1,15 @@
+import { useState } from 'react'
 import { Heart } from 'lucide-react'
 import confetti from 'canvas-confetti'
+
+const PROMPTS = [
+  'Will you be my Valentine?',
+  'Are you sure?',
+  'Please go out with me?',
+  'Pretty please?',
+  "I'll make you the happiest! Say yes?",
+  'Sige na?', // last step: only "Sige na nga" button (= Yes)
+]
 
 function fireConfetti() {
   const count = 120
@@ -18,9 +28,26 @@ function fireConfetti() {
 }
 
 function ValentineOverlay({ visible, onDismiss }) {
+  const [step, setStep] = useState(0)
+
   if (!visible) return null
 
+  const isLastStep = step >= PROMPTS.length - 1
+  const text = PROMPTS[step]
+
   function handleYes(e) {
+    e.stopPropagation()
+    fireConfetti()
+    onDismiss()
+  }
+
+  function handleNo(e) {
+    e.stopPropagation()
+    if (isLastStep) return
+    setStep((s) => s + 1)
+  }
+
+  function handleSigeNa(e) {
     e.stopPropagation()
     fireConfetti()
     onDismiss()
@@ -71,32 +98,44 @@ function ValentineOverlay({ visible, onDismiss }) {
           textShadow: '0 0 30px rgba(244, 63, 94, 0.5), 0 0 60px rgba(244, 63, 94, 0.3)',
         }}
       >
-        Will you be my Valentine?{' '}
+        {text}
+        {' '}
         <Heart
-          className="inline-block w-8 h-8 sm:w-10 sm:h-10 text-rose-400 fill-rose-400 animate-[heart-pulse_1.5s_ease-in-out_infinite] align-middle"
-          aria-hidden
-        />
+            className="inline-block w-8 h-8 sm:w-10 sm:h-10 text-rose-400 fill-rose-400 animate-[heart-pulse_1.5s_ease-in-out_infinite] align-middle"
+            aria-hidden
+          />
       </p>
 
       <div className="relative mt-8 flex flex-wrap gap-4 justify-center items-center">
-        <button
-          type="button"
-          onClick={handleYes}
-          className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-rose-500 hover:bg-rose-400 text-white text-xl font-semibold shadow-lg shadow-rose-500/30 transition-colors"
-        >
-          <Heart className="w-6 h-6 fill-current" />
-          Yes
-        </button>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation()
-            onDismiss()
-          }}
-          className="px-6 py-3 rounded-full bg-white/10 hover:bg-white/20 text-white/80 text-base transition-colors"
-        >
-          Maybe later
-        </button>
+        {!isLastStep && (
+          <>
+            <button
+              type="button"
+              onClick={handleYes}
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-rose-500 hover:bg-rose-400 text-white text-xl font-semibold shadow-lg shadow-rose-500/30 transition-colors"
+            >
+              <Heart className="w-6 h-6 fill-current" />
+              Yes
+            </button>
+            <button
+              type="button"
+              onClick={handleNo}
+              className="px-6 py-3 rounded-full bg-white/10 hover:bg-white/20 text-white/80 text-base transition-colors"
+            >
+              No
+            </button>
+          </>
+        )}
+        {isLastStep && (
+          <button
+            type="button"
+            onClick={handleSigeNa}
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-rose-500 hover:bg-rose-400 text-white text-xl font-semibold shadow-lg shadow-rose-500/30 transition-colors"
+          >
+            <Heart className="w-6 h-6 fill-current" />
+            Sige na nga
+          </button>
+        )}
       </div>
 
       <p

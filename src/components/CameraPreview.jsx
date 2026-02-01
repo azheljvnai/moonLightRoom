@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useRef } from 'react'
 
 const CameraPreview = forwardRef(function CameraPreview(
-  { stream, error, loading },
+  { stream, error, loading, onVideoReady },
   ref
 ) {
   const videoRef = useRef(null)
@@ -13,9 +13,21 @@ const CameraPreview = forwardRef(function CameraPreview(
 
   useEffect(() => {
     if (!stream || !videoRef.current) return
-    videoRef.current.srcObject = stream
-    videoRef.current.play().catch(() => {})
-  }, [stream])
+    const video = videoRef.current
+    video.srcObject = stream
+    video.play().catch(() => {})
+
+    function markReady() {
+      onVideoReady?.()
+    }
+    if (video.readyState >= 2) markReady()
+    video.addEventListener('loadeddata', markReady)
+    video.addEventListener('canplay', markReady)
+    return () => {
+      video.removeEventListener('loadeddata', markReady)
+      video.removeEventListener('canplay', markReady)
+    }
+  }, [stream, onVideoReady])
 
   if (error) {
     return (

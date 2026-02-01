@@ -1,11 +1,8 @@
 import { Camera } from 'lucide-react'
 
-export default function StartScreen({ onStart, loading, error }) {
+export default function StartScreen({ onStart, loading }) {
   return (
     <div className="min-h-[70vh] flex flex-col items-center justify-center px-6 text-center">
-      {error && (
-        <p className="mb-6 text-rose-300/90 text-sm max-w-md">{error}</p>
-      )}
       <div className="relative mb-8">
         <div
           className="absolute inset-0 rounded-full blur-3xl opacity-40"
