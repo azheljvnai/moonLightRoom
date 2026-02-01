@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react'
-import { Camera, ChevronRight, Timer } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Camera, ChevronRight, Timer, RotateCcw } from 'lucide-react'
 
 const PHOTO_COUNT = 4
-const COUNTDOWN_SEC = 3
+const TIMER_INTERVAL_SEC = 10
 
 export default function BoothScreen({
   videoRef,
@@ -13,16 +13,19 @@ export default function BoothScreen({
 }) {
   const [photos, setPhotos] = useState([])
   const [capturing, setCapturing] = useState(false)
-  const [captureMode, setCaptureMode] = useState('manual') // 'manual' | 'timed'
+  const [captureMode, setCaptureMode] = useState('manual')
+  const [timerStarted, setTimerStarted] = useState(false)
   const [countdown, setCountdown] = useState(null)
-  const countdownTimerRef = useRef(null)
+  const [selectedForRetake, setSelectedForRetake] = useState(null) // which slot (0–3) to retake when full
+  const timerIntervalRef = useRef(null)
+  const timerPhotosAddedRef = useRef(0)
 
-  function captureFrame() {
+  function doCapture() {
     const video = videoRef?.current
-    if (!video || video.readyState < 2) return
+    if (!video || video.readyState < 2) return null
     const w = video.videoWidth
     const h = video.videoHeight
-    if (w === 0 || h === 0) return
+    if (w === 0 || h === 0) return null
     const canvas = document.createElement('canvas')
     canvas.width = w
     canvas.height = h
@@ -34,35 +37,99 @@ export default function BoothScreen({
     if (overlayImage?.complete && overlayImage.naturalWidth) {
       ctx.drawImage(overlayImage, 0, 0, w, h)
     }
-    const dataUrl = canvas.toDataURL('image/png')
-    setPhotos((prev) => [...prev, dataUrl])
-    setCapturing(false)
-    setCountdown(null)
+    return canvas.toDataURL('image/png')
   }
 
-  function takePhoto() {
+  function addPhoto(dataUrl) {
+    setPhotos((prev) => {
+      if (prev.length >= PHOTO_COUNT) return prev
+      return [...prev, dataUrl]
+    })
+  }
+
+  function replacePhoto(index, dataUrl) {
+    setPhotos((prev) => prev.map((p, i) => (i === index ? dataUrl : p)))
+    setSelectedForRetake(null)
+  }
+
+  // Manual: one click = one photo (guard against double-fire)
+  const manualCapturingRef = useRef(false)
+  function takePhotoManual() {
+    if (!videoReady || photos.length >= PHOTO_COUNT || manualCapturingRef.current) return
+    manualCapturingRef.current = true
+    setCapturing(true)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const url = doCapture()
+        if (url) addPhoto(url)
+        setCapturing(false)
+        manualCapturingRef.current = false
+      })
+    })
+  }
+
+  function startTimerCapture() {
     if (!videoReady || photos.length >= PHOTO_COUNT) return
-    if (captureMode === 'manual') {
-      setCapturing(true)
-      requestAnimationFrame(() => requestAnimationFrame(captureFrame))
+    timerPhotosAddedRef.current = 0
+    setTimerStarted(true)
+    setCountdown(TIMER_INTERVAL_SEC)
+  }
+
+  useEffect(() => {
+    if (photos.length >= PHOTO_COUNT && timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current)
+      timerIntervalRef.current = null
+      setTimerStarted(false)
+      setCountdown(null)
+    }
+  }, [photos.length])
+
+  useEffect(() => {
+    if (captureMode !== 'timed' || !timerStarted || photos.length >= PHOTO_COUNT) {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current)
+        timerIntervalRef.current = null
+      }
       return
     }
-    // Timed: 3, 2, 1 then capture
-    if (countdownTimerRef.current) clearInterval(countdownTimerRef.current)
-    let sec = COUNTDOWN_SEC
-    setCountdown(sec)
-    countdownTimerRef.current = setInterval(() => {
-      sec -= 1
-      setCountdown(sec)
-      if (sec <= 0) {
-        if (countdownTimerRef.current) {
-          clearInterval(countdownTimerRef.current)
-          countdownTimerRef.current = null
+    timerIntervalRef.current = setInterval(() => {
+      setCountdown((c) => {
+        if (c <= 0) {
+          if (timerPhotosAddedRef.current >= PHOTO_COUNT) return TIMER_INTERVAL_SEC
+          const url = doCapture()
+          if (url) {
+            timerPhotosAddedRef.current += 1
+            setPhotos((prev) => {
+              if (prev.length >= PHOTO_COUNT) return prev
+              return [...prev, url]
+            })
+          }
+          return TIMER_INTERVAL_SEC
         }
-        setCapturing(true)
-        requestAnimationFrame(() => requestAnimationFrame(captureFrame))
-      }
+        return c - 1
+      })
     }, 1000)
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current)
+        timerIntervalRef.current = null
+      }
+    }
+  }, [captureMode, timerStarted, photos.length])
+
+  const retakeCapturingRef = useRef(false)
+  function handleRetakeCapture() {
+    if (selectedForRetake === null || retakeCapturingRef.current) return
+    retakeCapturingRef.current = true
+    setCapturing(true)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const url = doCapture()
+        if (url) replacePhoto(selectedForRetake, url)
+        setCapturing(false)
+        retakeCapturingRef.current = false
+      })
+    })
   }
 
   const full = photos.length >= PHOTO_COUNT
@@ -76,7 +143,15 @@ export default function BoothScreen({
       <div className="flex justify-center gap-2">
         <button
           type="button"
-          onClick={() => setCaptureMode('manual')}
+          onClick={() => {
+            setCaptureMode('manual')
+            setTimerStarted(false)
+            setCountdown(null)
+            if (timerIntervalRef.current) {
+              clearInterval(timerIntervalRef.current)
+              timerIntervalRef.current = null
+            }
+          }}
           className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             captureMode === 'manual'
               ? 'bg-rose-600 text-white'
@@ -89,22 +164,32 @@ export default function BoothScreen({
         <button
           type="button"
           onClick={() => setCaptureMode('timed')}
+          disabled={full || timerStarted}
           className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             captureMode === 'timed'
               ? 'bg-rose-600 text-white'
               : 'bg-white/10 text-white/80 hover:bg-white/20'
-          }`}
+          } disabled:opacity-50 disabled:pointer-events-none`}
         >
           <Timer className="w-4 h-4" />
-          {COUNTDOWN_SEC}s timer
+          {TIMER_INTERVAL_SEC}s auto
         </button>
       </div>
 
       <div className="grid grid-cols-4 gap-2 sm:gap-3 mb-4">
         {Array.from({ length: PHOTO_COUNT }).map((_, i) => (
-          <div
+          <button
             key={i}
-            className="aspect-square rounded-xl overflow-hidden bg-black/50 ring-1 ring-white/10 flex items-center justify-center"
+            type="button"
+            onClick={() => full && setSelectedForRetake(i)}
+            disabled={!full}
+            className={`aspect-square rounded-xl overflow-hidden flex items-center justify-center transition-all ${
+              full
+                ? selectedForRetake === i
+                  ? 'ring-2 ring-rose-500 ring-offset-2 ring-offset-[#0a0508]'
+                  : 'ring-2 ring-white/20 hover:ring-white/40'
+                : 'ring-1 ring-white/10 bg-black/50'
+            } disabled:pointer-events-none`}
           >
             {photos[i] ? (
               <img
@@ -115,27 +200,58 @@ export default function BoothScreen({
             ) : (
               <span className="text-white/30 text-xs">{i + 1}</span>
             )}
-          </div>
+          </button>
         ))}
       </div>
 
-      {countdown !== null && countdown > 0 && (
-        <div className="text-center text-4xl font-bold text-white/90 tabular-nums">
-          {countdown}
+      {captureMode === 'timed' && timerStarted && countdown !== null && photos.length < PHOTO_COUNT && (
+        <div className="text-center">
+          <p className="text-white/60 text-sm mb-1">Next photo in</p>
+          <p className="text-4xl font-bold text-white/90 tabular-nums">{countdown}s</p>
         </div>
       )}
 
-      <div className="flex flex-wrap gap-3 justify-center">
-        <button
-          type="button"
-          onClick={takePhoto}
-          disabled={!videoReady || capturing || full || (countdown !== null && countdown > 0)}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 disabled:opacity-50 disabled:pointer-events-none font-medium transition-colors"
-        >
-          <Camera className="w-5 h-5" />
-          {capturing ? 'Capturing…' : full ? 'Done' : countdown ? `${countdown}…` : 'Take Photo'}
-        </button>
-        {full && (
+      {captureMode === 'timed' && !timerStarted && !full && (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={startTimerCapture}
+            disabled={!videoReady}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 disabled:opacity-50 font-medium transition-colors"
+          >
+            <Timer className="w-5 h-5" />
+            Start {TIMER_INTERVAL_SEC}s auto capture
+          </button>
+        </div>
+      )}
+
+      {captureMode === 'manual' && !full && (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={takePhotoManual}
+            disabled={!videoReady || capturing}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 disabled:opacity-50 font-medium transition-colors"
+          >
+            <Camera className="w-5 h-5" />
+            {capturing ? 'Capturing…' : 'Take Photo'}
+          </button>
+        </div>
+      )}
+
+      {full && (
+        <div className="flex flex-wrap gap-3 justify-center items-center">
+          {selectedForRetake !== null && (
+            <button
+              type="button"
+              onClick={handleRetakeCapture}
+              disabled={!videoReady || capturing}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 disabled:opacity-50 font-medium transition-colors"
+            >
+              <RotateCcw className="w-5 h-5" />
+              {capturing ? 'Capturing…' : `Retry photo ${selectedForRetake + 1}`}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => onNext(photos)}
@@ -144,8 +260,14 @@ export default function BoothScreen({
             Next
             <ChevronRight className="w-5 h-5" />
           </button>
-        )}
-      </div>
+        </div>
+      )}
+
+      {full && selectedForRetake === null && (
+        <p className="text-center text-white/50 text-sm">
+          Click a photo to select it, then Retry to retake that one.
+        </p>
+      )}
     </div>
   )
 }
