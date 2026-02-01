@@ -19,7 +19,7 @@ export default function BoothScreen({
   const [selectedForRetake, setSelectedForRetake] = useState(null) // which slot (0–3) to retake when full
   const timerIntervalRef = useRef(null)
   const timerPhotosAddedRef = useRef(0)
-  const pendingTimerUrlRef = useRef(null)
+  const timerCountdownRef = useRef(TIMER_INTERVAL_SEC) // seconds left for current photo (single source of truth)
 
   function doCapture() {
     const video = videoRef?.current
@@ -72,10 +72,57 @@ export default function BoothScreen({
   function startTimerCapture() {
     if (!videoReady || photos.length >= PHOTO_COUNT) return
     timerPhotosAddedRef.current = 0
+    timerCountdownRef.current = TIMER_INTERVAL_SEC
     setTimerStarted(true)
     setCountdown(TIMER_INTERVAL_SEC)
   }
 
+  // Timer: 10s per photo, 1 by 1, total 4. Use ref for countdown so interval doesn't depend on state.
+  useEffect(() => {
+    if (captureMode !== 'timed' || !timerStarted) {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current)
+        timerIntervalRef.current = null
+      }
+      return
+    }
+    timerIntervalRef.current = setInterval(() => {
+      timerCountdownRef.current -= 1
+      const secsLeft = timerCountdownRef.current
+      setCountdown(secsLeft)
+
+      if (secsLeft <= 0) {
+        if (timerPhotosAddedRef.current >= PHOTO_COUNT) {
+          return
+        }
+        const url = doCapture()
+        if (url) {
+          timerPhotosAddedRef.current += 1
+          setPhotos((prev) => {
+            if (prev.length >= PHOTO_COUNT) return prev
+            return [...prev, url]
+          })
+        }
+        if (timerPhotosAddedRef.current >= PHOTO_COUNT) {
+          clearInterval(timerIntervalRef.current)
+          timerIntervalRef.current = null
+          setTimerStarted(false)
+          setCountdown(null)
+        } else {
+          timerCountdownRef.current = TIMER_INTERVAL_SEC
+          setCountdown(TIMER_INTERVAL_SEC)
+        }
+      }
+    }, 1000)
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current)
+        timerIntervalRef.current = null
+      }
+    }
+  }, [captureMode, timerStarted])
+
+  // Stop timer when we have 4 photos (e.g. from manual + timed mix, or race)
   useEffect(() => {
     if (photos.length >= PHOTO_COUNT && timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current)
@@ -84,42 +131,6 @@ export default function BoothScreen({
       setCountdown(null)
     }
   }, [photos.length])
-
-  useEffect(() => {
-    if (captureMode !== 'timed' || !timerStarted || photos.length >= PHOTO_COUNT) {
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current)
-        timerIntervalRef.current = null
-      }
-      return
-    }
-    timerIntervalRef.current = setInterval(() => {
-      setCountdown((c) => {
-        if (c <= 0) {
-          if (timerPhotosAddedRef.current >= PHOTO_COUNT) return TIMER_INTERVAL_SEC
-          const url = doCapture()
-          if (url) {
-            timerPhotosAddedRef.current += 1
-            pendingTimerUrlRef.current = url
-            setTimeout(() => {
-              if (pendingTimerUrlRef.current) {
-                setPhotos((prev) => (prev.length >= PHOTO_COUNT ? prev : [...prev, pendingTimerUrlRef.current]))
-                pendingTimerUrlRef.current = null
-              }
-            }, 0)
-          }
-          return TIMER_INTERVAL_SEC
-        }
-        return c - 1
-      })
-    }, 1000)
-    return () => {
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current)
-        timerIntervalRef.current = null
-      }
-    }
-  }, [captureMode, timerStarted, photos.length])
 
   const retakeCapturingRef = useRef(false)
   function handleRetakeCapture() {
