@@ -1,73 +1,168 @@
 import { useEffect, useRef, useState } from 'react'
 import CameraPreview from './components/CameraPreview'
-import PhotoCapture from './components/PhotoCapture'
-import VideoRecorder from './components/VideoRecorder'
+import StartScreen from './components/StartScreen'
+import BoothScreen from './components/BoothScreen'
+import FrameSelectScreen from './components/FrameSelectScreen'
+import EndScreen from './components/EndScreen'
 import ValentineOverlay from './components/ValentineOverlay'
 import BackgroundAudio from './components/BackgroundAudio'
+import { useRecording } from './hooks/useRecording'
+
+const OVERLAY_SRC = '/frames/red-moon-frame.png'
+const FLOW_START = 'start'
+const FLOW_BOOTH = 'booth'
+const FLOW_FRAME = 'frame'
+const FLOW_VALENTINE = 'valentine'
+const FLOW_END = 'end'
 
 function App() {
   const videoRef = useRef(null)
+  const [flow, setFlow] = useState(FLOW_START)
   const [stream, setStream] = useState(null)
   const [cameraError, setCameraError] = useState(null)
-  const [cameraLoading, setCameraLoading] = useState(true)
-  const [showValentineOverlay, setShowValentineOverlay] = useState(false)
+  const [cameraLoading, setCameraLoading] = useState(false)
+  const [photos, setPhotos] = useState([])
+  const [finalPhotoUrl, setFinalPhotoUrl] = useState(null)
+  const [overlayImage, setOverlayImage] = useState(null)
+
+  const {
+    isRecording,
+    recordedUrl,
+    recordedFilename,
+    startRecording,
+    stopRecording,
+  } = useRecording()
 
   useEffect(() => {
-    let mediaStream = null
-
-    async function startCamera() {
-      try {
-        setCameraError(null)
-        setCameraLoading(true)
-        mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
-          audio: true,
-        })
-        setStream(mediaStream)
-      } catch (err) {
-        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-          setCameraError('Camera and microphone access was denied. Please allow access to use the preview.')
-        } else if (err.name === 'NotFoundError') {
-          setCameraError('No camera or microphone was found on this device.')
-        } else if (err.name === 'NotReadableError') {
-          setCameraError('Camera or microphone is in use by another app.')
-        } else {
-          setCameraError(err.message || 'Failed to access camera and microphone.')
-        }
-      } finally {
-        setCameraLoading(false)
-      }
-    }
-
-    startCamera()
-
+    const img = new Image()
+    img.onload = () => setOverlayImage(img)
+    img.onerror = () => {}
+    img.src = OVERLAY_SRC
     return () => {
-      if (mediaStream) {
-        mediaStream.getTracks().forEach((track) => track.stop())
-      }
+      img.src = ''
     }
   }, [])
 
+  async function handleStart() {
+    setCameraLoading(true)
+    setCameraError(null)
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: true,
+      })
+      setStream(mediaStream)
+      setFlow(FLOW_BOOTH)
+      startRecording(mediaStream)
+    } catch (err) {
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setCameraError('Camera and microphone access was denied.')
+      } else if (err.name === 'NotFoundError') {
+        setCameraError('No camera or microphone was found.')
+      } else if (err.name === 'NotReadableError') {
+        setCameraError('Camera or microphone is in use by another app.')
+      } else {
+        setCameraError(err.message || 'Failed to access camera.')
+      }
+    } finally {
+      setCameraLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop())
+      }
+    }
+  }, [stream])
+
+  function handleBoothNext(photoList) {
+    setPhotos(photoList)
+    setFlow(FLOW_FRAME)
+  }
+
+  function handleFrameNext(url) {
+    setFinalPhotoUrl(url)
+    setFlow(FLOW_VALENTINE)
+  }
+
+  function handleValentineDismiss() {
+    setFlow(FLOW_END)
+    stopRecording()
+  }
+
+  const showHeader = flow !== FLOW_START
+
   return (
-    <div className="app-bg min-h-screen text-white p-6 space-y-6">
-      <h1 className="text-2xl sm:text-3xl font-bold text-center tracking-wide">Moon Light Room</h1>
-      <p className="text-center text-white/60 mt-2 text-lg">ENHYPEN-inspired photo booth</p>
-      <CameraPreview
-        ref={videoRef}
-        stream={stream}
-        error={cameraError}
-        loading={cameraLoading}
-      />
-      <PhotoCapture
-        videoRef={videoRef}
-        onPhotoCaptured={() => setShowValentineOverlay(true)}
-        autoDownload
-      />
-      <VideoRecorder stream={stream} autoDownload />
-      <ValentineOverlay
-        visible={showValentineOverlay}
-        onDismiss={() => setShowValentineOverlay(false)}
-      />
+    <div className="app-bg min-h-screen text-white p-6 pb-24">
+      {showHeader && (
+        <header className="max-w-2xl mx-auto mb-6 text-center">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-wide text-white/95">
+            Moon Light Room
+          </h1>
+          <p className="text-white/50 text-sm mt-1">ENHYPEN-inspired photo booth</p>
+        </header>
+      )}
+
+      {flow === FLOW_START && (
+        <StartScreen
+          onStart={handleStart}
+          loading={cameraLoading}
+          error={cameraError}
+        />
+      )}
+
+      {flow === FLOW_BOOTH && stream && (
+        <>
+          {isRecording && (
+            <div className="flex justify-center mb-2">
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/20 text-rose-300 text-xs font-medium ring-1 ring-rose-500/30">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-rose-500" />
+                </span>
+                Recording reaction
+              </span>
+            </div>
+          )}
+          <div className="w-full max-w-2xl mx-auto mb-6">
+            <CameraPreview
+              ref={videoRef}
+              stream={stream}
+              error={cameraError}
+              loading={false}
+            />
+          </div>
+          <BoothScreen
+            videoRef={videoRef}
+            stream={stream}
+            overlayImage={overlayImage}
+            onNext={handleBoothNext}
+          />
+        </>
+      )}
+
+      {flow === FLOW_FRAME && photos.length > 0 && (
+        <FrameSelectScreen
+          photos={photos}
+          overlayImage={overlayImage}
+          onNext={handleFrameNext}
+        />
+      )}
+
+      {flow === FLOW_VALENTINE && (
+        <ValentineOverlay visible onDismiss={handleValentineDismiss} />
+      )}
+
+      {flow === FLOW_END && (
+        <EndScreen
+          finalPhotoUrl={finalPhotoUrl}
+          recordedUrl={recordedUrl}
+          recordedFilename={recordedFilename}
+        />
+      )}
+
       <BackgroundAudio />
     </div>
   )

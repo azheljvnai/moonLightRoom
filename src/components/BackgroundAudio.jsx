@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from 'react'
+import { Volume2, VolumeX } from 'lucide-react'
 
 const AUDIO_SRC = '/audio/background.mp3'
 
@@ -48,16 +49,11 @@ function BackgroundAudio() {
           aria-label={isPlaying ? 'Pause background music' : 'Play background music'}
         >
           {isPlaying ? (
-            <>
-              <span className="text-base" aria-hidden>🔊</span>
-              <span>Music on</span>
-            </>
+            <Volume2 className="w-5 h-5" />
           ) : (
-            <>
-              <span className="text-base opacity-70" aria-hidden>🔇</span>
-              <span>Play music</span>
-            </>
+            <VolumeX className="w-5 h-5 opacity-70" />
           )}
+          <span>{isPlaying ? 'Music on' : 'Play music'}</span>
         </button>
       )}
     </>
